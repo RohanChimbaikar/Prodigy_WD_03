@@ -53,19 +53,71 @@ function makeMove(index, player) {
 
 // Random AI Move
 function aiMove() {
+  // 1. Try to win
+  const winMove = findBestMove('O');
+  if (winMove !== null) {
+    makeMove(winMove, 'O');
+    if (!checkWinner('O')) currentPlayer = 'X';
+    return;
+  }
+
+  // 2. Block the player
+  const blockMove = findBestMove('X');
+  if (blockMove !== null) {
+    makeMove(blockMove, 'O');
+    if (!checkWinner('O')) currentPlayer = 'X';
+    return;
+  }
+
+  // 3. Take center
+  if (array[4] === null) {
+    makeMove(4, 'O');
+    if (!checkWinner('O')) currentPlayer = 'X';
+    return;
+  }
+
+  // 4. Take corners
+  const corners = [0, 2, 6, 8].filter(i => array[i] === null);
+  if (corners.length > 0) {
+    const move = corners[Math.floor(Math.random() * corners.length)];
+    makeMove(move, 'O');
+    if (!checkWinner('O')) currentPlayer = 'X';
+    return;
+  }
+
+  // 5. Fallback: random move
   const available = array
     .map((val, idx) => val === null ? idx : null)
     .filter(v => v !== null);
 
-  if (available.length === 0) return;
-
-  const randIndex = available[Math.floor(Math.random() * available.length)];
-  makeMove(randIndex, 'O');
-
-  if (!checkWinner('O')) {
-    currentPlayer = 'X';
+  if (available.length > 0) {
+    const move = available[Math.floor(Math.random() * available.length)];
+    makeMove(move, 'O');
+    if (!checkWinner('O')) currentPlayer = 'X';
   }
 }
+function findBestMove(player) {
+  const winPatterns = [
+    [0,1,2], [3,4,5], [6,7,8], // rows
+    [0,3,6], [1,4,7], [2,5,8], // columns
+    [0,4,8], [2,4,6]           // diagonals
+  ];
+
+  for (const pattern of winPatterns) {
+    const [a, b, c] = pattern;
+    const values = [array[a], array[b], array[c]];
+    const playerCount = values.filter(v => v === player).length;
+    const emptyCount = values.filter(v => v === null).length;
+
+    if (playerCount === 2 && emptyCount === 1) {
+      const emptyIndex = [a, b, c].find(i => array[i] === null);
+      return emptyIndex;
+    }
+  }
+
+  return null;
+}
+
 
 // Check for winner or draw
 function checkWinner(player) {
